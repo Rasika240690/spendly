@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Profile — Spendly{% endblock %}
+
+{% block content %}
+<section class="profile-page">
+    <div class="profile-shell">
+        <div class="profile-header">
+            <div>
+                <p class="eyebrow">Your profile</p>
+                <h1 class="page-title">{{ user["name"] }}</h1>
+            </div>
+            <div class="profile-actions">
+                <a href="{{ url_for('add_expense') }}" class="btn-primary">Add expense</a>
+                <a href="{{ url_for('logout') }}" class="btn-ghost">Logout</a>
+            </div>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card highlight">
+                <span class="summary-label">Total spent</span>
+                <strong class="summary-value">₹{{ '%.2f' % total }}</strong>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Transactions</span>
+                <strong class="summary-value">{{ expenses|length }}</strong>
+            </div>
+        </div>
+
+        <div class="expense-panel">
+            <div class="panel-header">
+                <h2>Recent expenses</h2>
+            </div>
+
+            {% if expenses %}
+                <div class="expense-list">
+                    {% for expense in expenses %}
+                    <div class="expense-item">
+                        <div class="expense-main">
+                            <div>
+                                <p class="expense-category">{{ expense["category"] }}</p>
+                                <p class="expense-desc">{{ expense["description"] or 'No description' }}</p>
+                            </div>
+                            <div class="expense-meta">
+                                <span>{{ expense["date"] }}</span>
+                            </div>
+                        </div>
+                        <div class="expense-actions">
+                            <span class="expense-amount">₹{{ '%.2f' % expense["amount"] }}</span>
+                            <div class="mini-actions">
+                                <a href="{{ url_for('edit_expense', id=expense['id']) }}">Edit</a>
+                                <a href="{{ url_for('delete_expense', id=expense['id']) }}" class="danger-link">Delete</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">
+                    <p>No expenses added yet.</p>
+                    <a href="{{ url_for('add_expense') }}" class="btn-primary">Add your first expense</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
