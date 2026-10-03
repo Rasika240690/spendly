@@ -1,10 +1,13 @@
 import sqlite3
+from datetime import date
 from pathlib import Path
 
 from werkzeug.security import generate_password_hash
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / "database" / "expense_tracker.db"
+DB_PATH = BASE_DIR / "spendly.db"
+
+CATEGORIES = ["Food", "Transport", "Bills", "Health", "Entertainment", "Shopping", "Other"]
 
 
 def get_db():
@@ -22,18 +25,18 @@ def init_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             email TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            password_hash TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now'))
         );
 
         CREATE TABLE IF NOT EXISTS expenses (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
-            category TEXT NOT NULL,
             amount REAL NOT NULL,
-            description TEXT,
+            category TEXT NOT NULL,
             date TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            description TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         );
         """
@@ -43,37 +46,36 @@ def init_db():
 
 
 def seed_db():
-    init_db()
     conn = get_db()
 
-    demo_user = conn.execute(
-        "SELECT id FROM users WHERE email = ?",
-        ("demo@spendly.com",),
-    ).fetchone()
+    if conn.execute("SELECT 1 FROM users LIMIT 1").fetchone() is not None:
+        conn.close()
+        return
 
-    if demo_user is None:
-        conn.execute(
-            "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
-            (
-                "Demo User",
-                "demo@spendly.com",
-                generate_password_hash("demo123"),
-            ),
-        )
-        user_id = conn.execute(
-            "SELECT id FROM users WHERE email = ?",
-            ("demo@spendly.com",),
-        ).fetchone()["id"]
+    cursor = conn.execute(
+        "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
+        ("Demo User", "demo@spendly.com", generate_password_hash("demo123")),
+    )
+    user_id = cursor.lastrowid
 
-        conn.executemany(
-            "INSERT INTO expenses (user_id, category, amount, description, date) VALUES (?, ?, ?, ?, ?)",
-            [
-                (user_id, "Food", 520.0, "Groceries", "2026-09-01"),
-                (user_id, "Travel", 340.0, "Train tickets", "2026-09-04"),
-                (user_id, "Bills", 1500.0, "Internet and mobile", "2026-09-08"),
-                (user_id, "Health", 780.0, "Medicine and checkup", "2026-09-12"),
-            ],
-        )
+    today = date.today()
+
+    def day(d):
+        return today.replace(day=d).isoformat()
+
+    conn.executemany(
+        "INSERT INTO expenses (user_id, amount, category, date, description) VALUES (?, ?, ?, ?, ?)",
+        [
+            (user_id, 520.0, "Food", day(1), "Groceries"),
+            (user_id, 340.0, "Transport", day(3), "Metro card recharge"),
+            (user_id, 1500.0, "Bills", day(6), "Internet and mobile"),
+            (user_id, 780.0, "Health", day(9), "Medicine and checkup"),
+            (user_id, 450.0, "Entertainment", day(12), "Movie tickets"),
+            (user_id, 2199.0, "Shopping", day(15), "New shoes"),
+            (user_id, 260.0, "Food", day(19), "Dinner out"),
+            (user_id, 300.0, "Other", day(24), "Gift wrapping and cards"),
+        ],
+    )
 
     conn.commit()
     conn.close()

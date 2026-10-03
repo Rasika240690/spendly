@@ -26,7 +26,7 @@
 
     <div class="lh-actions">
         <a href="{{ url_for('register') }}" class="lh-btn">Create free account</a>
-        <a href="#" class="lh-btn">See how it works</a>
+        <a href="#" class="lh-btn" id="how-it-works-btn">See how it works</a>
     </div>
 
     <div class="lh-preview">
@@ -99,4 +99,58 @@
     </div>
 </section>
 
+<div class="video-modal" id="video-modal" role="dialog" aria-modal="true" aria-label="See how Spendly works" hidden>
+    <div class="video-modal-content">
+        <button type="button" class="video-modal-close" id="video-modal-close" aria-label="Close video">&times;</button>
+        <div class="video-modal-frame">
+            {# Placeholder video: replace the ID in data-src with the real one #}
+            <iframe id="video-modal-iframe"
+                    data-src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&rel=0"
+                    title="See how Spendly works"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen></iframe>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        var openBtn = document.getElementById("how-it-works-btn");
+        var modal = document.getElementById("video-modal");
+        var closeBtn = document.getElementById("video-modal-close");
+        var iframe = document.getElementById("video-modal-iframe");
+
+        function openModal(event) {
+            event.preventDefault();
+            iframe.src = iframe.dataset.src;
+            modal.hidden = false;
+            document.body.style.overflow = "hidden";
+            closeBtn.focus();
+        }
+
+        function closeModal() {
+            if (modal.hidden) return;
+            modal.hidden = true;
+            // Removing the src unloads the player, so the video stops completely
+            iframe.src = "";
+            document.body.style.overflow = "";
+            openBtn.focus();
+        }
+
+        openBtn.addEventListener("click", openModal);
+        closeBtn.addEventListener("click", closeModal);
+
+        // Clicking the dark overlay (outside the video box) closes the modal
+        modal.addEventListener("click", function (event) {
+            if (event.target === modal) closeModal();
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") closeModal();
+        });
+    })();
+</script>
 {% endblock %}
