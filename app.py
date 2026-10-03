@@ -6,8 +6,9 @@ from database.db import get_db, init_db, seed_db
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "spendly-dev-secret-key"
 
-init_db()
-seed_db()
+with app.app_context():
+    init_db()
+    seed_db()
 
 
 def get_logged_in_user():
@@ -59,7 +60,7 @@ def register():
             return render_template("register.html", error="An account with that email already exists."), 400
 
         conn.execute(
-            "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
+            "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
             (name, email, generate_password_hash(password)),
         )
         conn.commit()
@@ -77,12 +78,12 @@ def login():
 
         conn = get_db()
         user = conn.execute(
-            "SELECT id, name, email, password FROM users WHERE email = ?",
+            "SELECT id, name, email, password_hash FROM users WHERE email = ?",
             (email,),
         ).fetchone()
         conn.close()
 
-        if user is None or not check_password_hash(user["password"], password):
+        if user is None or not check_password_hash(user["password_hash"], password):
             return render_template("login.html", error="Invalid email or password."), 401
 
         session["user_id"] = user["id"]
